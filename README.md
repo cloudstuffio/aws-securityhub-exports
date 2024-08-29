@@ -1,58 +1,149 @@
 
-# Welcome to your CDK Python project!
+# Security Hub Findings Exporter
 
-This is a blank project for CDK development with Python.
+## Description
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+This project allows you to deploy a solution to export and email Security Hub findings.
 
-This project is set up like a standard Python project.  The initialization
-process also creates a virtualenv within this project, stored under the `.venv`
-directory.  To create the virtualenv it assumes that there is a `python3`
-(or `python` for Windows) executable in your path with access to the `venv`
-package. If for any reason the automatic creation of the virtualenv fails,
-you can create the virtualenv manually.
+## Setup
 
-To manually create a virtualenv on MacOS and Linux:
+All configuration occurs in the cdk.context.json.
 
-```
-$ python -m venv .venv
-```
+### CDK Stack Names
 
-After the init process completes and the virtualenv is created, you can use the following
-step to activate your virtualenv.
-
-```
-$ source .venv/bin/activate
+```json
+{
+    "main_stack_name": "SecurityHubExporter",
+    "event_stack_name": "Events",
+    "iam_stack_name": "IAM",
+    "lambda_stack_name": "Lambda"
+}
 ```
 
-If you are a Windows platform, you would activate the virtualenv like this:
+You can have more than one rule such as a daily email and a monthly email. Each rule consists of the following:
 
+### EventBridge Rules
+
+Example 1: All options, daily email
+
+```json
+{
+    "name": "daily-securityhub-findings",
+    "from_email": "security@example.com",
+    "to_emails": [
+        "admin@example.com"
+    ],
+    "enabled": true,
+    "rate": "days",
+    "duration": 1,
+    "subject": "Daily AWS Security Hub Findings",
+    "body": "Please find the attached daily AWS Security Hub Findings export.",
+    "compliance_status_filter": ["PASSED", "FAILED", "NOT_AVAILABLE", "WARNING"],
+    "security_standard_filter": ["aws-foundational-security-best-practices", "aws-resource-tagging-standard", "cis-aws-foundations-benchmark", "nist-800-53", "pci-dss"],
+    "severity_filter": ["INFORMATIONAL", "LOW", "MEDIUM", "HIGH", "CRITICAL"],
+    "workflow_status_filter": ["NEW", "NOTIFIED", "RESOLVED", "SUPPRESSED"]
+}
 ```
-% .venv\Scripts\activate.bat
+
+Example 2: All without passed, resolved, or suppressed findings, daily email
+
+```json
+{
+    "name": "daily-securityhub-findings",
+    "from_email": "security@example.com",
+    "to_emails": [
+        "admin@example.com"
+    ],
+    "enabled": true,
+    "rate": "days",
+    "duration": 1,
+    "subject": "Daily AWS Security Hub Findings",
+    "body": "Please find the attached daily AWS Security Hub Findings export.",
+    "compliance_status_filter": ["FAILED", "NOT_AVAILABLE", "WARNING"],
+    "security_standard_filter": ["aws-foundational-security-best-practices", "aws-resource-tagging-standard", "cis-aws-foundations-benchmark", "nist-800-53", "pci-dss"],
+    "severity_filter": ["INFORMATIONAL", "LOW", "MEDIUM", "HIGH", "CRITICAL"],
+    "workflow_status_filter": ["NEW", "NOTIFIED"]
+}
 ```
 
-Once the virtualenv is activated, you can install the required dependencies.
+Example 3: AWS Foundational Best Practices without passed, resolved, or suppressed findings, daily email
 
+```json
+{
+    "name": "daily-securityhub-findings",
+    "from_email": "security@example.com",
+    "to_emails": [
+        "admin@example.com"
+    ],
+    "enabled": true,
+    "rate": "days",
+    "duration": 1,
+    "subject": "Daily AWS Security Hub Findings",
+    "body": "Please find the attached daily AWS Security Hub Findings export.",
+    "compliance_status_filter": ["FAILED", "NOT_AVAILABLE", "WARNING"],
+    "security_standard_filter": ["aws-foundational-security-best-practices"],
+    "severity_filter": ["INFORMATIONAL", "LOW", "MEDIUM", "HIGH", "CRITICAL"],
+    "workflow_status_filter": ["NEW", "NOTIFIED"]
+}
 ```
-$ pip install -r requirements.txt
-```
 
-At this point you can now synthesize the CloudFormation template for this code.
+Required Arguments:
 
-```
-$ cdk synth
-```
+name: String for the EventBridge rule name.
+from_email: String for the sent from email.
+to_emails: List of strings for the send to emails.
 
-To add additional dependencies, for example other CDK libraries, just add
-them to your `setup.py` file and rerun the `pip install -r requirements.txt`
-command.
+Optional Arguments:
 
-## Useful commands
+enabled (boolean):
 
- * `cdk ls`          list all stacks in the app
- * `cdk synth`       emits the synthesized CloudFormation template
- * `cdk deploy`      deploy this stack to your default AWS account/region
- * `cdk diff`        compare deployed stack with current state
- * `cdk docs`        open CDK documentation
+- true (default)
+- false
 
-Enjoy!
+rate (string):
+
+- minutes
+- hours (default)
+- days
+
+duration (integer): 1-365 (default is 1)
+
+subject (string): String of the subject to use for the email.
+
+body (string): String to use for the body of the email.
+
+compliance_status_filter (list(string)):
+
+- PASSED
+- FAILED
+- NOT_AVAILABLE
+- WARNING
+
+security_standard_filter (list(string)):
+
+- aws-foundational-security-best-practices
+- aws-resource-tagging-standard
+- cis-aws-foundations-benchmark
+- nist-800-53
+- pci-dss
+
+severity_filter (list(string)):
+
+- INFORMATIONAL
+- LOW
+- MEDIUM
+- HIGH
+- CRITICAL
+
+workflow_status_filter (list(string)):
+
+- NEW
+- NOTIFIED
+- RESOLVED
+- SUPPRESSED
+
+### Notes
+
+The duration time is subject to API Rate Limits. During testing, it was found that 5 minutes was the smallest interval to use.
+
+In AWS Simple Email Service, the domain of the emails supplied in the configuration must be verified in the SES console under Identities.

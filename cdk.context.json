@@ -1,0 +1,66 @@
+{
+    "stacks": {
+        "main_stack_name": "SecurityHubExporter",
+        "event_stack_name": "Events",
+        "iam_stack_name": "IAM",
+        "lambda_stack_name": "Lambda"
+    },
+    "events": {
+        "rules": [
+            {
+                "name": "daily-securityhub-findings",
+                "from_email": "security@example.com",
+                "to_emails": [
+                    "admin@example.com"
+                ],
+                "enabled": true,
+                "rate": "days",
+                "duration": 1,
+                "subject": "Daily AWS Security Hub Findings",
+                "body": "Please find the attached daily AWS Security Hub Findings export.",
+                "compliance_status_filter": ["FAILED", "NOT_AVAILABLE", "WARNING"],
+                "security_standard_filter": ["cis-aws-foundations-benchmark"],
+                "severity_filter": ["INFORMATIONAL", "LOW", "MEDIUM", "HIGH", "CRITICAL"],
+                "workflow_status_filter": ["NEW", "NOTIFIED"]
+            },
+            {
+                "name": "monthly-securityhub-findings",
+                "from_email": "security@example.com",
+                "to_emails": [
+                    "admin@example.com"
+                ],
+                "enabled": true,
+                "rate": "days",
+                "duration": 30,
+                "subject": "Monthly AWS Security Hub Findings",
+                "body": "Please find the attached monthly AWS Security Hub Findings export.",
+                "compliance_status_filter": ["PASSED", "FAILED", "NOT_AVAILABLE", "WARNING"],
+                "security_standard_filter": ["aws-foundational-security-best-practices", "aws-resource-tagging-standard", "cis-aws-foundations-benchmark", "nist-800-53", "pci-dss"],
+                "severity_filter": ["INFORMATIONAL", "LOW", "MEDIUM", "HIGH", "CRITICAL"],
+                "workflow_status_filter": ["NEW", "NOTIFIED", "RESOLVED", "SUPPRESSED"]
+            }
+        ]
+    },
+    "iam": {
+        "securityhub_findings_policy_description": "Lambda Security Hub Findings Policy",
+        "securityhub_findings_policy_name": "lambda-securityhub-findings-policy",
+        "securityhub_findings_policy_path": "/",
+        "securityhub_findings_role_description": "Lambda Security Hub Findings Role",
+        "securityhub_findings_role_name": "lambda-securityhub-findings-role",
+        "securityhub_findings_role_path": "/"
+    },
+    "lambda": {
+        "securityhub_findings_arch": "x86_64",
+        "securityhub_findings_description": "Security Hub Findings Exporter",
+        "securityhub_findings_handler": "index.lambda_handler",
+        "securityhub_findings_logformat": "json",
+        "securityhub_findings_loglevel_app": "info",
+        "securityhub_findings_loglevel_sys": "info",
+        "securityhub_findings_max_event_age": 6,
+        "securityhub_findings_memory_size": 128,
+        "securityhub_findings_name": "securityhub-findings-exporter",
+        "securityhub_findings_runtime_type": "python3.12",
+        "securityhub_findings_timeout": 600,
+        "securityhub_findings_tracing_type": "disabled"
+    }
+}

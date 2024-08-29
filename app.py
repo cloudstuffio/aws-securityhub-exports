@@ -1,28 +1,55 @@
 #!/usr/bin/env python3
+###############################################################################
+### Imports
+###############################################################################
 import os
-
 import aws_cdk as cdk
+from stacks.event_stack import EventStack
+from stacks.iam_stack import IamStack
+from stacks.lambda_stack import LambdaStack
+from stacks.main_stack import MainStack
 
-from aws_securityhub_exports.aws_securityhub_exports_stack import AwsSecurityhubExportsStack
 
-
+###############################################################################
+### CDK App Initialization
+###############################################################################
 app = cdk.App()
-AwsSecurityhubExportsStack(app, "AwsSecurityhubExportsStack",
-    # If you don't specify 'env', this stack will be environment-agnostic.
-    # Account/Region-dependent features and context lookups will not work,
-    # but a single synthesized template can be deployed anywhere.
 
-    # Uncomment the next line to specialize this stack for the AWS Account
-    # and Region that are implied by the current CLI configuration.
+###############################################################################
+### CDK Environment
+###############################################################################
+account = os.getenv("CDK_DEFAULT_ACCOUNT")
+region = os.getenv("CDK_DEFAULT_REGION")
+stack_vars = app.node.try_get_context("stacks")
 
-    #env=cdk.Environment(account=os.getenv('CDK_DEFAULT_ACCOUNT'), region=os.getenv('CDK_DEFAULT_REGION')),
+###############################################################################
+### Stacks
+###############################################################################
+main_stack = MainStack(
+    app,
+    stack_vars.get("main_stack_name", "MainStack"),
+    env=cdk.Environment(account=account, region=region),
+)
 
-    # Uncomment the next line if you know exactly what Account and Region you
-    # want to deploy the stack to. */
+# Nested Stacks
+iam_stack = IamStack(
+    main_stack,
+    stack_vars.get("iam_stack_name", "IamStack"),
+)
 
-    #env=cdk.Environment(account='123456789012', region='us-east-1'),
+lambda_stack = LambdaStack(
+    main_stack,
+    stack_vars.get("lambda_stack_name", "LambdaStack"),
+    iam_stack=iam_stack,
+)
 
-    # For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html
-    )
+event_stack = EventStack(
+    main_stack,
+    stack_vars.get("event_stack_name", "EventStack"),
+    lambda_stack=lambda_stack,
+)
 
+###############################################################################
+### CDK App Synthesis
+###############################################################################
 app.synth()
