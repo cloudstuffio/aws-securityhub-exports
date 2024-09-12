@@ -4,7 +4,7 @@
 import csv
 import json
 import logging
-import os
+from datetime import datetime
 from io import StringIO
 
 ###############################################################################
@@ -29,120 +29,6 @@ logger.setLevel(logging.INFO)
 ###############################################################################
 ### Functions
 ###############################################################################
-# def filter_data(input_list):
-#     logger.info("Filtering findings data")
-#     filtered_list = []
-#     for item in input_list:
-#         filtered_item = {
-#             "awsAccountId": item.get("AwsAccountId", ""),
-#             "awsAccountName": item.get("AwsAccountName", ""),
-#             "controlId": item.get("ProductFields").get("ControlId", ""),
-#             "description": item.get("Description", ""),
-#             "findingId": item.get("Id", ""),
-#             "firstSeen": item.get("FirstObservedAt", ""),
-#             "lastSeen": item.get("LastObservedAt", ""),
-#             "region": item.get("Region", ""),
-#             "remediationText": item.get("Remediation", {})
-#             .get("Recommendation", {})
-#             .get("Text", ""),
-#             "remediationUrl": item.get("Remediation", {})
-#             .get("Recommendation", {})
-#             .get("Url", ""),
-#             "severity": item.get("Severity", {}).get("Label", ""),
-#             "status": item.get("Compliance", {}).get("Status", ""),
-#             "title": item.get("Title", ""),
-#         }
-#         filtered_list.append(filtered_item)
-#     logger.info(f"Filtered data contains {len(filtered_list)} findings")
-#     return filtered_list
-
-
-# Extract Security Standards
-# def extract_security_standard(types_list):
-#     """
-#     Extracts the last part of each string in the types list and returns the unique values.
-
-#     :param types_list: List of strings, e.g., "Effects/Data Exposure/AWS-Foundational-Security-Best-Practices".
-#     :return: A list of unique extracted values.
-#     """
-#     extracted_standards = set()
-#     for item in types_list:
-#         if "/" in item:
-#             extracted_standards.add(item.split("/")[-1])
-#     return list(extracted_standards)
-
-
-# def filter_data(
-#     input_list,
-#     compliance_status_filter=None,
-#     security_standard_filter=None,
-#     severity_filter=None,
-#     workflow_status_filter=None,
-# ):
-#     """
-#     Filters the input list based on severity, status, and security standard, if provided.
-
-#     :param input_list: List of findings to filter.
-#     :param severity_filter: List of severities to include in the output. If None, include all.
-#     :param status_filter: List of statuses to include in the output. If None, include all.
-#     :param security_standard_filter: List of security standards to include in the output. If None, include all.
-#     :return: Filtered list of findings.
-#     """
-#     logger.info("Filtering findings data")
-#     filtered_list = [
-#         {
-#             "awsAccountId": item.get("AwsAccountId", ""),
-#             "awsAccountName": item.get("AwsAccountName", ""),
-#             "controlId": item.get("ProductFields", {}).get("ControlId", ""),
-#             "description": item.get("Description", ""),
-#             "findingId": item.get("Id", ""),
-#             "firstSeen": item.get("FirstObservedAt", ""),
-#             "lastSeen": item.get("LastObservedAt", ""),
-#             "region": item.get("Region", ""),
-#             "remediationText": item.get("Remediation", {})
-#             .get("Recommendation", {})
-#             .get("Text", ""),
-#             "remediationUrl": item.get("Remediation", {})
-#             .get("Recommendation", {})
-#             .get("Url", ""),
-#             "securityStandard": extract_security_standard(
-#                 item.get("FindingProviderFields", {}).get("Types", [])
-#             ),
-#             "severity": item.get("Severity", {}).get("Label", ""),
-#             "status": item.get("Compliance", {}).get("Status", ""),
-#             "title": item.get("Title", ""),
-#             "workflowStatus": item.get("Workflow", {}).get("Status", ""),
-#         }
-#         for item in input_list
-#         if (
-#             compliance_status_filter is None
-#             or item.get("Compliance", {}).get("Status", "")
-#             in compliance_status_filter
-#         )
-#         and (
-#             security_standard_filter is None
-#             or any(
-#                 standard
-#                 in extract_security_standard(
-#                     item.get("FindingProviderFields", {}).get("Types", [])
-#                 )
-#                 for standard in security_standard_filter
-#             )
-#         )
-#         and (
-#             severity_filter is None
-#             or item.get("Severity", {}).get("Label", "") in severity_filter
-#         )
-#         and (
-#             workflow_status_filter is None
-#             or item.get("Workflow", {}).get("Status", "")
-#             in workflow_status_filter
-#         )
-#     ]
-#     logger.info(f"Filtered data contains {len(filtered_list)} findings")
-#     return filtered_list
-
-
 def extract_security_standards_from_finding_id(finding_id):
     """
     Extracts security standards from the findingId field.
@@ -256,6 +142,12 @@ def send_email_with_attachment(
 ):
     logger.info("Sending email with attachment")
 
+    # Get the current date
+    current_date = datetime.now()
+
+    # Format the date as MMDDYYYY
+    date_str = current_date.strftime("%m%d%Y")
+
     # Base email attributes
     recipient_emails = event.get("to_emails")
     sender = event.get("from_email")
@@ -271,7 +163,7 @@ def send_email_with_attachment(
     charset = event.get("charset", "utf-8")
 
     # Attachment Filename
-    filename = event.get("filename", "securityhub_findings.csv")
+    filename = event.get("filename", f"securityhub-findings-{date_str}.csv")
 
     # Try to send the email
     try:

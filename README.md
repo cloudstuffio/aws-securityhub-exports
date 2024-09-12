@@ -147,3 +147,12 @@ workflow_status_filter (list(string)):
 The duration time is subject to API Rate Limits. During testing, it was found that 5 minutes was the smallest interval to use.
 
 In AWS Simple Email Service, the domain of the emails supplied in the configuration must be verified in the SES console under Identities.
+
+## Deploy Steps
+
+### Prerequisites
+
+Git
+AWS CLI
+AWS CDK CLI
+
